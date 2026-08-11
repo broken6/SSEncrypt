@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>加密查询测试</title>
+    <script src="https://cdn.staticfile.net/axios/1.6.5/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <h1>加密查询测试</h1>
+    <button onclick="queryData()">普通查询</button>
+    <button onclick="queryDataWithSign()">签名查询</button>
+    <pre id="result"></pre>
+
+    <script>
+        // AES 加密配置，与后端一致
+        const SECRET_KEY = 'xAI_Grok3_2025_16bytes_key123456'; // 32 字节
+        const IV = '1234567890abcdef'; // 16 字节
+        const SIGNATURE_KEY = 'xAI_Signature_Key_2025'; // 签名密钥
+
+        // AES 加密函数
+        function encryptData(data) {
+            const key = CryptoJS.enc.Utf8.parse(SECRET_KEY);
+            const iv = CryptoJS.enc.Utf8.parse(IV);
+            const encrypted = CryptoJS.AES.encrypt(data, key, {
+                iv: iv,
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7
+            });
+            return encrypted.toString();
+        }
+
+        // AES 解密函数
+        function decryptData(encrypted) {
+            const key = CryptoJS.enc.Utf8.parse(SECRET_KEY);
+            const iv = CryptoJS.enc.Utf8.parse(IV);
+            const decrypted = CryptoJS.AES.decrypt(encrypted, key, {
+                iv: iv,
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7
+            });
+            return decrypted.toString(CryptoJS.enc.Utf8);
+        }
+
+        // 生成 HMAC-SHA256 签名
+        function generateSignature(data) {
+            return CryptoJS.HmacSHA256(data, SIGNATURE_KEY).toString();
+        }
+
+        // 普通查询
+        async function queryData() {
+            try {
+                const params = { query: "test" };
+                const paramsJson = JSON.stringify(params);
+                const encryptedParams = encryptData(paramsJson);
+                const requestBody = JSON.stringify({ data: encryptedParams });
+                const encryptedBody = encryptData(requestBody);
+                
+                const response = await axios.post('/query', encryptedBody, {
+                    headers: { 'Content-Type': 'text/plain' }
+                });
+                
+                const decryptedBody = decryptData(response.data);
+                const responseJson = JSON.parse(decryptedBody);
+                const encryptedResponseData = responseJson.data;
+                const decryptedResponseData = decryptData(encryptedResponseData);
+                
+                document.getElementById('result').textContent = decryptedResponseData;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').textContent = '普通查询失败: ' + error.message;
+            }
+        }
+
+        // 带签名的查询
+        async function queryDataWithSign() {
+            try {
+                const params = { query: "test_with_sign" };
+                const paramsJson = JSON.stringify(params);
+                const encryptedParams = encryptData(paramsJson);
+                const requestBody = JSON.stringify({ data: encryptedParams });
+                const encryptedBody = encryptData(requestBody);
+                
+                // 生成签名
+                const signature = generateSignature(encryptedBody);
+                
+                const response = await axios.post('/query_with_sign', encryptedBody, {
+                    headers: { 
+                        'Content-Type': 'text/plain',
+                        'Sign': signature 
+                    }
+                });
+                
+                const decryptedBody = decryptData(response.data);
+                const responseJson = JSON.parse(decryptedBody);
+                const encryptedResponseData = responseJson.data;
+                const decryptedResponseData = decryptData(encryptedResponseData);
+                
+                document.getElementById('result').textContent = decryptedResponseData;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').textContent = '签名查询失败: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

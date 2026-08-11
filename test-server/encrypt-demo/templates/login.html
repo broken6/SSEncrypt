@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>登录</title>
+  <script src="https://cdn.staticfile.net/axios/1.6.5/axios.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+  <script src="{{ url_for('static', filename='js/crypto.js') }}"></script>
+</head>
+<body>
+<h1>用户登录</h1>
+<form id="loginForm">
+  <div>
+    <label>用户名:</label>
+    <input type="text" id="username" required>
+  </div>
+  <div>
+    <label>密码:</label>
+    <input type="password" id="password" required>
+  </div>
+  <button type="button" onclick="submitLogin()">登录</button>
+</form>
+<pre id="result"></pre>
+
+<script>
+    async function submitLogin() {
+        try {
+            const loginData = {
+                username: document.getElementById('username').value,
+                password: document.getElementById('password').value
+            };
+
+            const paramsJson = JSON.stringify(loginData);
+            const encryptedParams = encryptData(paramsJson);
+            const requestBody = JSON.stringify({ data: encryptedParams });
+            const encryptedBody = encryptData(requestBody);
+            const signature = generateSignature(encryptedBody);
+
+            const response = await axios.post('/login', encryptedBody, {
+                headers: {
+                    'Content-Type': 'text/plain',
+                    'Sign': signature
+                }
+            });
+
+            const decryptedBody = decryptData(response.data);
+            const responseJson = JSON.parse(decryptedBody);
+            const encryptedResponseData = responseJson.data;
+            const decryptedResponseData = decryptData(encryptedResponseData);
+            const result = JSON.parse(decryptedResponseData);
+
+            document.getElementById('result').textContent =
+                `${result.status}: ${result.message}`;
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('result').textContent =
+                '登录失败: ' + (error.response?.data?.error || error.message);
+        }
+    }
+</script>
+</body>
+</html>

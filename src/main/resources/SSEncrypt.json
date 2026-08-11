@@ -1,0 +1,16 @@
+{
+  "encrypt_scripts": [
+    {
+      "name": "test",
+      "content": "this.result(msg, encryptData(msg.input));"
+    },
+    {
+      "name": "sign",
+      "content": "this.result(msg, generateSignature(msg.input));"
+    }
+  ],
+  "decrypt_scripts": [{
+    "name": "test",
+    "content": "this.result(msg, decryptData(msg.input));"
+  }]
+}
