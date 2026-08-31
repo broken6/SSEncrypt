@@ -113,7 +113,12 @@ public class GUIManager {
         startButton.addActionListener(e -> {
             serverManager.startServer(portField.getText());
             updateButtonStates();
-            plugin.getConfigManager().setBindPort(Integer.parseInt(portField.getText()));
+            if (plugin.isRunning()) {
+                try {
+                    plugin.getConfigManager().setBindPort(Integer.parseInt(portField.getText().trim()));
+                } catch (NumberFormatException ignored) {
+                }
+            }
         });
         stopButton.addActionListener(e -> {
             serverManager.stopServer();
