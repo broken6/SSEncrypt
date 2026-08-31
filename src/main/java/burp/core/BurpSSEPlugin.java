@@ -42,7 +42,7 @@ public class BurpSSEPlugin implements IBurpExtender, IExtensionStateListener, IC
     public void registerExtenderCallbacks(IBurpExtenderCallbacks callbacks) {
         this.callbacks = callbacks;
         this.helpers = callbacks.getHelpers();
-        callbacks.setExtensionName("SSEncrypt v1.2.3");
+        callbacks.setExtensionName("SSEncrypt v1.2.4");
         callbacks.registerExtensionStateListener(this);
         callbacks.registerContextMenuFactory(this);
         callbacks.registerHttpListener(this);
